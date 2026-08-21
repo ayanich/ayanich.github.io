@@ -43,3 +43,40 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: ./scripts/check-links.sh
+
+  policy:
+    name: OPA policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install conftest
+        run: |
+          set -euo pipefail
+          CONFTEST_VERSION=0.69.0
+          bin="${RUNNER_TEMP}/bin"; mkdir -p "$bin"
+          tmp="$(mktemp -d)"
+          base="https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}"
+          curl -fsSL "${base}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" -o "${tmp}/c.tar.gz"
+          curl -fsSL "${base}/checksums.txt" -o "${tmp}/checksums.txt"
+          # Fail closed: an unverified binary is not installed at all.
+          ( cd "${tmp}" && grep " conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz$" checksums.txt | sha256sum -c - )
+          tar -xzf "${tmp}/c.tar.gz" -C "$bin" conftest
+          chmod +x "$bin/conftest"
+          echo "$bin" >> "$GITHUB_PATH"
+
+      - name: Pull the shared policy bundle
+        # Anonymous pull. The package is public, so there is deliberately no
+        # docker login and no `packages: read` permission -- stale credentials
+        # get preferred over anonymous auth and cause spurious 403s.
+        #
+        # :latest, not a pinned digest: a rule added centrally should reach
+        # every repository on its next run. The cost is that a central policy
+        # change can turn this red without anything here changing, which is the
+        # right direction for a control to fail.
+        run: conftest pull --policy .conftest oci://ghcr.io/ayanich/policy-bundle:latest
+
+      - name: Workflow policy
+        # SHA-pinned actions, explicit permissions, no pull_request_target head
+        # checkout, no github.event data interpolated into a shell.
+        run: conftest test --policy .conftest/policy/workflow --namespace workflow .github/workflows/*.yml

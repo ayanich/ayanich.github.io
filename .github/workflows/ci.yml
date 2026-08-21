@@ -1,0 +1,45 @@
+# The site is served straight from main by GitHub Pages -- there is no build
+# step and no staging. A merge is a deploy. These checks are the only thing
+# between a broken edit and the live page.
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # External links rot without anyone touching the repo, so re-check weekly.
+    - cron: "13 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  html:
+    name: html validity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: pipx install html5validator==0.4.2
+      - name: Validate
+        # --ignore-re on backdrop-filter: vnu's bundled CSS database is out of
+        # date and reports the property as non-existent. It is well supported
+        # and used deliberately here, so this is a false positive, not a
+        # suppression of a real finding. Verified: without the ignore the
+        # validator exits 1 on this one rule alone.
+        run: |
+          html5validator --root . \
+            --ignore-re 'Property "backdrop-filter" doesn.t exist'
+
+  links:
+    name: links and anchors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: ./scripts/check-links.sh

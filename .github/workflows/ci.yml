@@ -57,11 +57,19 @@ jobs:
           bin="${RUNNER_TEMP}/bin"; mkdir -p "$bin"
           tmp="$(mktemp -d)"
           base="https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}"
-          curl -fsSL "${base}/conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz" -o "${tmp}/c.tar.gz"
-          curl -fsSL "${base}/checksums.txt" -o "${tmp}/checksums.txt"
+          tarball="conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz"
+
+          # Download under its REAL filename. `sha256sum -c` reads the name out
+          # of the checksums line and looks for that exact file on disk, so
+          # saving it as anything else makes verification fail with
+          # "No such file or directory" -- which reads like a download failure
+          # but is really a naming mismatch.
+          curl -fsSL "${base}/${tarball}"      -o "${tmp}/${tarball}"
+          curl -fsSL "${base}/checksums.txt"   -o "${tmp}/checksums.txt"
+
           # Fail closed: an unverified binary is not installed at all.
-          ( cd "${tmp}" && grep " conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz$" checksums.txt | sha256sum -c - )
-          tar -xzf "${tmp}/c.tar.gz" -C "$bin" conftest
+          ( cd "${tmp}" && grep " ${tarball}$" checksums.txt | sha256sum -c - )
+          tar -xzf "${tmp}/${tarball}" -C "$bin" conftest
           chmod +x "$bin/conftest"
           echo "$bin" >> "$GITHUB_PATH"
 

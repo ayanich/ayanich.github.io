@@ -15,9 +15,16 @@ Live URL once deployed: **https://ayanich.github.io**
 
 This is a **user site**, so the repo name must match your username exactly.
 
+> **Convention:** all GitHub repos live under `~/src/`. Move (or copy) this
+> folder there before pushing.
+
 ```bash
-# 1. From the folder containing index.html
-cd ayanich.github.io
+# 0. Move the working copy into ~/src (one-time)
+mkdir -p ~/src
+mv "/Users/asher/Library/Application Support/Claude/local-agent-mode-sessions/65a0b245-dcce-42ce-9c83-3b3fb4ecd370/0c1d0341-163a-4857-9b6e-69138f2ad00b/local_5f13569a-f7f4-44e6-b06f-8d1ca4820fc9/outputs/ayanich.github.io" ~/src/
+
+# 1. Work from the canonical location
+cd ~/src/ayanich.github.io
 
 # 2. Initialize git
 git init -b main
@@ -71,7 +78,7 @@ If you buy a domain (e.g. `asheryanich.com`):
 No build needed. Either:
 
 ```bash
-# any static server works
+cd ~/src/ayanich.github.io
 python3 -m http.server 8000
 # then open http://localhost:8000
 ```

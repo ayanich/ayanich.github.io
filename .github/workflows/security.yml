@@ -1,0 +1,28 @@
+# The site is public, so GitHub's own secret scanning already covers it. This
+# adds TruffleHog's verification pass on top, which catches credentials that
+# GitHub's provider patterns miss -- and on a public repo a live credential is
+# exposed the moment it lands.
+name: security
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: trufflehog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: trufflesecurity/trufflehog@bcfcf73aaf4759d4dadc2783177c245a02792318 # v3.97.0
+        with:
+          path: ./
+          extra_args: --results=verified,unknown

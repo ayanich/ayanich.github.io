@@ -1,0 +1,90 @@
+# The site is served straight from main by GitHub Pages -- there is no build
+# step and no staging. A merge is a deploy. These checks are the only thing
+# between a broken edit and the live page.
+name: ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # External links rot without anyone touching the repo, so re-check weekly.
+    - cron: "13 7 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  html:
+    name: html validity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: pipx install html5validator==0.4.2
+      - name: Validate
+        # --ignore-re on backdrop-filter: vnu's bundled CSS database is out of
+        # date and reports the property as non-existent. It is well supported
+        # and used deliberately here, so this is a false positive, not a
+        # suppression of a real finding. Verified: without the ignore the
+        # validator exits 1 on this one rule alone.
+        run: |
+          html5validator --root . \
+            --ignore-re 'Property "backdrop-filter" doesn.t exist'
+
+  links:
+    name: links and anchors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: ./scripts/check-links.sh
+
+  policy:
+    name: OPA policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install conftest
+        run: |
+          set -euo pipefail
+          CONFTEST_VERSION=0.69.0
+          bin="${RUNNER_TEMP}/bin"; mkdir -p "$bin"
+          tmp="$(mktemp -d)"
+          base="https://github.com/open-policy-agent/conftest/releases/download/v${CONFTEST_VERSION}"
+          tarball="conftest_${CONFTEST_VERSION}_Linux_x86_64.tar.gz"
+
+          # Download under its REAL filename. `sha256sum -c` reads the name out
+          # of the checksums line and looks for that exact file on disk, so
+          # saving it as anything else makes verification fail with
+          # "No such file or directory" -- which reads like a download failure
+          # but is really a naming mismatch.
+          curl -fsSL "${base}/${tarball}"      -o "${tmp}/${tarball}"
+          curl -fsSL "${base}/checksums.txt"   -o "${tmp}/checksums.txt"
+
+          # Fail closed: an unverified binary is not installed at all.
+          ( cd "${tmp}" && grep " ${tarball}$" checksums.txt | sha256sum -c - )
+          tar -xzf "${tmp}/${tarball}" -C "$bin" conftest
+          chmod +x "$bin/conftest"
+          echo "$bin" >> "$GITHUB_PATH"
+
+      - name: Pull the shared policy bundle
+        # Anonymous pull. The package is public, so there is deliberately no
+        # docker login and no `packages: read` permission -- stale credentials
+        # get preferred over anonymous auth and cause spurious 403s.
+        #
+        # :latest, not a pinned digest: a rule added centrally should reach
+        # every repository on its next run. The cost is that a central policy
+        # change can turn this red without anything here changing, which is the
+        # right direction for a control to fail.
+        run: conftest pull --policy .conftest oci://ghcr.io/ayanich/policy-bundle:latest
+
+      - name: Workflow policy
+        # SHA-pinned actions, explicit permissions, no pull_request_target head
+        # checkout, no github.event data interpolated into a shell.
+        run: conftest test --policy .conftest/policy/workflow --namespace workflow .github/workflows/*.yml

@@ -223,6 +223,63 @@
       border: 1px solid var(--border);
     }
 
+    /* Projects */
+    .project {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px 24px;
+    }
+    .project + .project { margin-top: 16px; }
+    .project .meta {
+      display: flex; flex-wrap: wrap; gap: 8px 14px;
+      align-items: baseline;
+      margin-bottom: 4px;
+    }
+    .project .title {
+      font-weight: 600; font-size: 18px; color: var(--text);
+    }
+    .project .kicker {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 12px;
+      color: var(--accent);
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+    .project .dates {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px; color: var(--text-mute);
+      margin-left: auto;
+    }
+    .project .subtitle {
+      color: var(--text-dim);
+      margin: 10px 0 0;
+      max-width: 64ch;
+    }
+    .project ul {
+      margin: 14px 0 0; padding-left: 18px;
+      color: var(--text-dim);
+    }
+    .project ul li { margin-bottom: 6px; }
+    .project ul li strong { color: var(--text); font-weight: 600; }
+    .project .chips { margin-top: 16px; }
+    .project .links {
+      margin-top: 16px;
+      display: flex; flex-wrap: wrap; gap: 10px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 13px;
+    }
+    .project .links a {
+      color: var(--accent);
+      border: 1px solid var(--border);
+      padding: 6px 10px; border-radius: 6px;
+    }
+    .project .links a:hover {
+      border-color: var(--accent);
+      background: rgba(126,231,135,0.06);
+      text-decoration: none;
+    }
+
     /* Education */
     .edu {
       background: var(--bg-card);
@@ -279,6 +336,7 @@
       <ul>
         <li><a href="#about">about</a></li>
         <li><a href="#experience">experience</a></li>
+        <li><a href="#projects">projects</a></li>
         <li><a href="#skills">skills</a></li>
         <li><a href="#education">education</a></li>
         <li><a href="#contact">contact</a></li>
@@ -444,6 +502,78 @@
           Sr. Systems Engineer, Netflix (2009–2010) · Sr. Systems Administrator, Yahoo! (2006–2009) ·
           Systems Engineer, Netblue (2005–2006) · Sr. Unix Administrator, Yesmail / InfoUSA (2003–2005) ·
           Unix Systems &amp; Network Support, Florida International University (2000–2003)
+        </div>
+      </div>
+    </section>
+
+    <section id="projects">
+      <h3 class="section-title">selected work</h3>
+
+      <div class="project">
+        <div class="meta">
+          <div>
+            <div class="kicker">Volunteer · platform engineering</div>
+            <span class="title">Flowtoys — org-wide dev platform &amp; multi-stack contributions</span>
+          </div>
+          <span class="dates">Aug 2026 — Present</span>
+        </div>
+
+        <p class="subtitle">
+          Volunteering engineering leadership and hands-on work to the small team behind
+          <a href="https://github.com/flowtoys-inc" target="_blank" rel="noopener">flowtoys-inc</a> —
+          the LED flow-prop maker and the firmware, mobile app, desktop updater, and hardware
+          repos around it. Scope has grown from a single CI fix into an org-wide platform-engineering
+          effort across ~12 repositories.
+        </p>
+
+        <ul>
+          <li><strong>Org-wide dev standards</strong> — authored
+            <a href="https://github.com/flowtoys-inc/dev-standards" target="_blank" rel="noopener">flowtoys-inc/dev-standards</a>:
+            shared rules per stack (Rust, C/C++, Dart/Flutter, Python, KiCad) plus reusable GitHub
+            Actions workflows (Conventional-Commit PR checks + TruffleHog, Rust CI, Release Please)
+            adopted across every active repo.</li>
+          <li><strong>FinOps on CI</strong> — rewired workflows to GitHub Free's 2,000-Actions-minute
+            budget (macOS counts 10×): path-filtered macOS runs, merged small jobs, arm64-only PR builds,
+            and a compiler cache + Ninja + apt cache on the slow builds.</li>
+          <li><strong>Flutter / mobile (App-FlowtoysConnect)</strong> — 150+ commits hardening
+            BLE reliability (bridge autoconnect, launch-time permissions, failed-connect recovery,
+            Bluetooth-toggle resilience), validating OSC addresses, isolating per-screen state into
+            its own bloc, and growing a bloc test suite that runs under fake time.</li>
+          <li><strong>flowOS firmware</strong> — ported FW-flowOS3 (Rust) to fugit 0.6 and lock_api 0.5
+            and kept the dependency surface clean; on FW-flowOS_vision and flowos-one (C firmware)
+            replaced dead GitLab CI with GitHub Actions, added GitHub Release automation,
+            and fixed NUL-termination / GCC 15 regressions in <code>fw_ident</code> and <code>git_rev</code>.</li>
+          <li><strong>FlowtoysUpdater (JUCE 9 desktop app)</strong> — fixed the Linux build, signed
+            the Windows exe + installer with Azure Artifact Signing, and modernized the Dependabot /
+            submodule flow.</li>
+          <li><strong>Hardware repos</strong> — brought four KiCad repos (Creators-Ball, Clutch,
+            DMX-Bridge, Pro-Bridge) and the connect-protocol-doc docs repo onto the same PR-check + Dependabot
+            pipeline with per-stack README and contributing docs; evaluated Git LFS for binaries
+            and reverted when the trade-offs weren't worth it.</li>
+          <li><strong>flowtoys-infra</strong> — opened the infra repo with an AWS inventory,
+            security plan and cost plan to size the attack surface and spend.</li>
+        </ul>
+
+        <div class="chips">
+          <span class="chip">Rust</span>
+          <span class="chip">Flutter / Dart</span>
+          <span class="chip">Python</span>
+          <span class="chip">C / C++</span>
+          <span class="chip">GitHub Actions</span>
+          <span class="chip">Release Please</span>
+          <span class="chip">Dependabot</span>
+          <span class="chip">JUCE</span>
+          <span class="chip">KiCad</span>
+          <span class="chip">BLE</span>
+          <span class="chip">OSC</span>
+          <span class="chip">uv</span>
+          <span class="chip">AWS</span>
+        </div>
+
+        <div class="links">
+          <a href="https://github.com/flowtoys-inc" target="_blank" rel="noopener">github.com/flowtoys-inc ↗</a>
+          <a href="https://github.com/flowtoys-inc/dev-standards" target="_blank" rel="noopener">dev-standards ↗</a>
+          <a href="https://github.com/flowtoys-inc/FlowtoysUpdater" target="_blank" rel="noopener">FlowtoysUpdater ↗</a>
         </div>
       </div>
     </section>

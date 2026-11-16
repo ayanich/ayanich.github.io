@@ -26,16 +26,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - run: pipx install html5validator==0.4.2
+      # The Nu Html Checker (vnu), the engine behind validator.w3.org, run
+      # directly. The html5validator wrapper used before bundled a 2020 vnu
+      # whose CSS database flagged modern properties (backdrop-filter,
+      # scrollbar-width) as non-existent. Pinning vnu-jar pins the checker
+      # itself, so bump the version here to pick up new HTML/CSS rules.
+      # Java and npm are preinstalled on the runner.
+      - name: Install vnu
+        run: npm install --no-save --prefix "$RUNNER_TEMP/vnu" vnu-jar@26.11.14
       - name: Validate
-        # --ignore-re on backdrop-filter: vnu's bundled CSS database is out of
-        # date and reports the property as non-existent. It is well supported
-        # and used deliberately here, so this is a false positive, not a
-        # suppression of a real finding. Verified: without the ignore the
-        # validator exits 1 on this one rule alone.
+        # Exits non-zero on errors only; info notices are printed but pass.
         run: |
-          html5validator --root . \
-            --ignore-re 'Property "backdrop-filter" doesn.t exist'
+          git ls-files -z '*.html' | xargs -0 \
+            java -jar "$RUNNER_TEMP/vnu/node_modules/vnu-jar/build/dist/vnu.jar"
 
   links:
     name: links and anchors
